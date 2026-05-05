@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  ComposedChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 import {
   BarChart3, Bell, Settings, ChevronDown, ChevronUp, X, Check,
   SkipForward, CheckCircle2, AlertCircle, Clock, Zap, List,
   ChevronRight, ArrowRight, Edit3, Info, Play, Plus, Download,
   ShoppingBag, Tag, Package, Eye, MessageSquare, Star, Megaphone,
-  TrendingUp, AlertTriangle, Sparkles
+  TrendingUp, AlertTriangle, Sparkles,
+  MessageCircle, LayoutGrid, Activity, TableProperties, Settings2,
+  History, Calculator, Globe, Truck, Box
 } from 'lucide-react'
 
 // ─── GLOBAL STYLES (breathing dot + fade-in-up) ───────────────────────────────
@@ -39,25 +41,25 @@ const A = {
 // ─── ANALYSIS SCENE DATA ─────────────────────────────────────────────────────
 
 const REASONING_LINES = [
-  'Загружаю матрицу — 247 SKU',
-  'Сверяю с историей продаж за 12 месяцев',
-  'Считаю эластичность по категориям',
-  'Проверяю сезонность: пик через 6 недель',
-  'Сопоставляю с целевой ДРР 18%',
+  'Загружаю матрицу — 4 артикула на Wildberries',
+  'Анализирую экономику за 05.04–05.05: продажи 88 527 ₽ / 66 шт.',
+  'Обнаружен критический факт: маржинальность 0,7% при ДРР 18,9%',
+  'Диагностирую по артикулам: 1 рабочий, 2 убыточных, 1 без остатка',
+  'Формирую план восстановления маржи на 60 дней: цель 18,5%',
 ]
 
 const INSIGHT_CARDS = [
-  { icon: 'TrendingUp',    text: '23 SKU с потенциалом роста +30%' },
-  { icon: 'AlertCircle',   text: '3 товара требуют пересмотра минимальной цены' },
-  { icon: 'AlertTriangle', text: 'Высокий риск каннибализации в категории «Платья»' },
+  { icon: 'TrendingUp',    text: 'Артикул 14433381 — единственный с положительной маржой (+10,5%). Основа плана.' },
+  { icon: 'AlertCircle',   text: 'Артикулы 14433382 и 28920236 убыточны: маржа -9,7% и -15,1%' },
+  { icon: 'AlertTriangle', text: 'Реклама съедает 18,9% от продаж. Оптимизация даёт +6 п.п. к марже' },
 ]
 
 const SCENARIO_CANDIDATES = [
-  { id: 1, name: 'Агрессивная реклама всей матрицы',             desc: 'Подключить рекламу ко всем 247 SKU, повышенные ставки',     rejected: true,  reason: 'Превышение целевой ДРР на 4.8%' },
-  { id: 2, name: 'Ценовая война с конкурентом',                  desc: 'Снижение цен на топ-20 SKU ниже рыночных',                 rejected: true,  reason: 'Риск падения маржи ниже 12%' },
-  { id: 3, name: 'Точечная реклама топ-23 SKU',                  desc: 'Усиленная реклама товаров с потенциалом +30%',              rejected: false },
-  { id: 4, name: 'Динамическое ценообразование сезонной коллекции', desc: 'Гибкие цены под пик сезона через 6 недель',              rejected: false },
-  { id: 5, name: 'Стимулирование отзывов на низкомаржинальных SKU', desc: 'Автозапросы отзывов, повышение конверсии',               rejected: false },
+  { id: 1, name: 'Агрессивное наращивание рекламного бюджета',   desc: 'Резкий рост ставок и охвата по всем 4 артикулам',         rejected: true,  reason: 'Реклама уже 18,9% от продаж — рост обнулит маржу' },
+  { id: 2, name: 'Участие во всех акциях площадки без фильтрации', desc: 'Подключить все акции WB для ускорения продаж',          rejected: true,  reason: 'При маржинальности 0,7% скидки приведут к убытку' },
+  { id: 3, name: 'Защита минимальной маржи через управление ценой', desc: 'Повышение цены на 2–3% там, где есть спрос, без потери заказов', rejected: false },
+  { id: 4, name: 'Контроль участия в акциях',                    desc: 'Входить в акции только при сохранении положительной маржи', rejected: false },
+  { id: 5, name: 'Оптимизация рекламы под прибыль',              desc: 'Отключить неэффективные расходы, оставить только работающие связки', rejected: false },
 ]
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
@@ -134,47 +136,52 @@ const CHAT_SCRIPT = [
 const SCENARIOS_PROPOSAL = [
   {
     id: 1,
-    name: 'Масштабирование сильных SKU через рекламу',
-    agent: 'Агент Рекламы',
-    desc: 'Основной источник прироста заказов. Масштабируются товары, которые уже показывают сильную экономику и хорошую конверсию.',
-    impact: 'в заказах +14 500 шт. (+60,0 млн ₽), в продажах +52,0 млн ₽, в марже +10,2 млн ₽',
-    coverage: '14 из 100 SKU',
+    name: 'Защита минимальной маржи через управление ценой',
+    agent: 'Агент Ценообразования',
+    desc: 'Удерживает прибыльность товаров и не позволяет продавать ниже экономически оправданного уровня. Фокус на 14433381, 14433382 и 28920236.',
+    algorithm: 'Если маржинальность ниже 8% — повышать цену на 2–3% не чаще раза в 2 дня. Если остаток менее 60 дней продаж — +2% к цене. Не снижать цену при отрицательной марже. По 59100591 — не менять цену до пополнения остатка.',
+    impact: 'маржа +13 000 ₽, маржинальность +5,0 п.п.',
+    coverage: '4 артикула',
     freq: '1 раз в день',
   },
   {
     id: 2,
-    name: 'Ценовая донастройка SKU с трафиком, но слабой конверсией',
-    agent: 'Агент Ценообразования',
-    desc: 'Добирает там, где карточка уже получает трафик, но часть спроса теряется на цене.',
-    impact: 'в заказах +14 500 шт. (+60,0 млн ₽), в продажах +52,0 млн ₽, в марже +10,2 млн ₽',
-    coverage: '24 из 100 SKU',
+    name: 'Контроль участия в акциях',
+    agent: 'Агент Акций',
+    desc: 'Не допускает участия товаров в акциях, где итоговая цена ниже минимально допустимой. Акции — только для ускорения продаж товаров с большим остатком.',
+    algorithm: 'Входить в акцию только если после скидки сохраняется положительная маржа. По 14433382 — только при маржинальности не ниже 10%. По 28920236 — только короткие акции. По 59100591 — не участвовать до появления остатка.',
+    impact: 'маржа +6 000 ₽, маржинальность +2,2 п.п.',
+    coverage: '4 артикула',
     freq: '1 раз в день',
   },
   {
     id: 3,
-    name: 'Точечное участие в акциях по товарам с хорошим выкупом',
-    agent: 'Агент Акций',
-    desc: 'Ускоряет оборот и даёт дополнительный объём заказов без массового демпинга по всей матрице.',
-    impact: 'в заказах +14 500 шт. (+60,0 млн ₽), в продажах +52,0 млн ₽, в марже +10,2 млн ₽',
-    coverage: '14 из 100 SKU',
+    name: 'Оптимизация рекламы под прибыль, а не под оборот',
+    agent: 'Агент Рекламы',
+    desc: 'Сокращает неэффективные расходы и оставляет рекламу только там, где она приводит к заказам с положительной экономикой.',
+    algorithm: 'Отключать направления без заказов за 2 дня. Снижать ставку на 10–15% при низком CTR. По 14433382 — резко ограничить бюджет до подтверждения положительной маржи. По 59100591 — рекламу не запускать до пополнения остатка.',
+    impact: 'маржа +16 000 ₽, маржинальность +6,0 п.п., ДРР с 18,9% → 9–10%',
+    coverage: '4 артикула',
     freq: '1 раз в день',
   },
   {
     id: 4,
-    name: 'Управление отзывами для роста доверия и выкупа',
+    name: 'Рост доверия и допродажи через отзывы',
     agent: 'Агент Отзывов',
-    desc: 'Повышает рейтинг карточек через своевременные ответы и работу с негативом.',
-    impact: 'в заказах +3 200 шт. (+12,0 млн ₽), в марже +2,1 млн ₽',
-    coverage: 'вся матрица',
-    freq: '2 раза в день',
+    desc: 'Повышает доверие к карточкам и снижает потери конверсии. Ответы вежливые, конкретные, с аргументацией преимуществ и мягкими рекомендациями.',
+    algorithm: 'Отвечать на все новые отзывы ежедневно. В позитивных — сценарии повторной покупки. В нейтральных — объяснять особенности. В негативных — спокойно и аргументированно. Усиливать доверие к 14433381 как основному товару.',
+    impact: 'маржа +3 000 ₽, маржинальность +1,1 п.п., конверсия +1–2 п.п.',
+    coverage: '4 артикула',
+    freq: '1 раз в день',
   },
   {
     id: 5,
-    name: 'Ответы на вопросы для снятия барьеров покупки',
-    agent: 'Агент Контента',
-    desc: 'Снижает количество потерянных сделок из-за отсутствия ответов на вопросы покупателей.',
-    impact: 'в конверсии +0,3 п.п., в заказах +2 100 шт.',
-    coverage: 'вся матрица',
+    name: 'Повышение конверсии через ответы на вопросы',
+    agent: 'Агент Вопросов',
+    desc: 'Помогает покупателям быстрее принять решение, закрывает возражения и снижает зависимость от скидок.',
+    algorithm: 'Отвечать на вопросы в день поступления. Объяснять применение простым языком. По товарам с низкой конверсией — конкретика: размер, состав, ограничения, совместимость. Фиксировать частые вопросы для улучшения карточек.',
+    impact: 'маржа +2 500 ₽, маржинальность +0,9 п.п., конверсия из корзины +1–1,5 п.п.',
+    coverage: '4 артикула',
     freq: '1 раз в день',
   },
 ]
@@ -182,78 +189,78 @@ const SCENARIOS_PROPOSAL = [
 const SCENARIOS_DASHBOARD = [
   {
     id: 1,
-    name: 'Масштабирование сильных SKU через рекламу',
-    icon: <Megaphone size={16} />,
-    agent: 'Агент Рекламы',
-    desc: 'Основной источник прироста заказов. Масштабируются товары, которые уже показывают сильную экономику и хорошую конверсию.',
-    algorithm: 'ежедневно проверять CTR, конверсию клик→заказ, ДРР и позицию в рекламе; повышать ставки на 2–4 ₽ для SKU с CTR выше медианы и маржой выше 12%; добавлять поисковые фразы, которые дают заказы; отключать ключи с кликами без заказов; перераспределять бюджет из слабых SKU в сильные; удерживать рекламные позиции в диапазоне, где рост трафика не ломает экономику.',
-    impact: 'в заказах +14 500 шт. (+60,0 млн ₽), в продажах +52,0 млн ₽, в марже +10,2 млн ₽, в маржинальности +0,4 п.п.',
-    coverage: '14 из 100 SKU',
+    name: 'Защита минимальной маржи через управление ценой',
+    icon: <Tag size={16} />,
+    agent: 'Агент Ценообразования',
+    desc: 'Удерживает прибыльность товаров и не позволяет продавать ниже экономически оправданного уровня.',
+    algorithm: 'Если маржинальность ниже 8% — повышать цену на 2–3% не чаще раза в 2 дня. Если остаток менее 60 дней продаж — +2% к цене. Не снижать цену при отрицательной марже. По 59100591 — не менять цену до пополнения остатка.',
+    impact: 'маржа +13 000 ₽, маржинальность +5,0 п.п.',
+    coverage: '4 артикула',
     freq: '1 раз в день',
     corrections: [
       {
-        date: '12.05.25', time: '22:32',
-        text: 'Сценарий удерживает завышенную цену на SKU с остатком 12–14 дней, что тормозит продажи на -18% vs плановый темп. При 14 оставшихся днях приоритет смещается с защиты позиций на выполнение плана — порог триггера нужно опустить с 15 до 9 дней, чтобы ценовой тормоз включался только при реальной угрозе OOS, а не профилактически.',
-        changes: [{ label: 'Порог до OOS', from: '15 шт.', to: '9 шт.' }, { label: 'Шаг изменения цены', from: '10%', to: '15%' }],
+        date: '12.05.25', time: '09:14',
+        text: 'Артикул 14433381 устойчиво держит заказы 4 дня подряд после повышения цены на 2%. Спрос не просел — рекомендую увеличить шаг повышения до 3%, чтобы быстрее выйти на целевую маржинальность.',
+        changes: [{ label: 'Шаг повышения цены', from: '2%', to: '3%' }],
       },
       {
-        date: '12.05.25', time: '22:32',
-        text: 'SKU с индексом остатка 65–75 дней удерживаются в диапазоне 40–60 дней слишком мягкой ценовой коррекцией (−3–5%), что недостаточно для ускорения оборачиваемости за 14 дней. Более агрессивное снижение цены сократит индекс до целевого уровня и высвободит оборотные средства до дедлайна.',
-        changes: [{ label: 'Шаг изменения цены', from: '5%', to: '10%' }],
+        date: '14.05.25', time: '11:40',
+        text: 'По артикулу 14433382 после повышения цены заказы упали на 35% за 2 дня. Экономика не улучшилась. Рекомендую откатить шаг до 1,5% и зафиксировать текущий уровень цены на 5 дней.',
+        changes: [{ label: 'Шаг изменения цены', from: '3%', to: '1,5%' }],
       },
     ],
   },
   {
     id: 2,
-    name: 'Ценовая донастройка SKU с трафиком, но слабой конверсией',
-    icon: <Tag size={16} />,
-    agent: 'Агент Ценообразования',
-    desc: 'Добирает там, где карточка уже получает трафик, но часть спроса теряется на цене.',
-    algorithm: 'раз в день проверять товары с конверсией клик→заказ ниже медианы и маржой выше 12%; снижать цену на 2–5% на 3 дня для теста; если конверсия растёт — фиксировать новую цену; для SKU с сильным спросом и выкупом цену не трогать или повышать на 1–2% для сохранения экономики.',
-    impact: 'в заказах +14 500 шт. (+60,0 млн ₽), в продажах +52,0 млн ₽, в марже +10,2 млн ₽, в маржинальности +0,4 п.п.',
-    coverage: '24 из 100 SKU',
+    name: 'Контроль участия в акциях',
+    icon: <Star size={16} />,
+    agent: 'Агент Акций',
+    desc: 'Не допускает участия товаров в акциях с ценой ниже минимально допустимой. Акции — только для ускорения оборота у товаров с большим остатком.',
+    algorithm: 'Входить в акцию только если после скидки сохраняется положительная маржа. По 14433382 — только при маржинальности не ниже 10%. По 28920236 — только короткие акции. По 59100591 — не участвовать до появления остатка.',
+    impact: 'маржа +6 000 ₽, маржинальность +2,2 п.п.',
+    coverage: '4 артикула',
     freq: '1 раз в день',
     corrections: [
       {
-        date: '05.05.25', time: '10:15',
-        text: 'Конверсия по 8 SKU выросла после снижения цен на 3%, фиксируем новые уровни. Маржа сохраняется в допустимых границах.',
-        changes: [{ label: 'Статус', from: 'тест', to: 'зафиксировано' }],
+        date: '13.05.25', time: '08:55',
+        text: 'WB предложил акцию с глубиной скидки 22% для артикула 14433382. При текущей цене маржинальность уйдёт в минус (-3,1%). Агент заблокировал участие. Рекомендую снизить порог допустимой скидки для этого артикула.',
+        changes: [{ label: 'Макс. скидка для 14433382', from: '25%', to: '15%' }],
       },
     ],
   },
   {
     id: 3,
-    name: 'Точечное участие в акциях по товарам с хорошим выкупом',
-    icon: <Star size={16} />,
-    agent: 'Агент Акций',
-    desc: 'Ускоряет оборот и даёт дополнительный объём заказов без массового демпинга по всей матрице.',
-    algorithm: 'раз в день проверять товары с конверсией клик→заказ ниже медианы и маржой выше 12%; снижать цену на 2–5% на 3 дня для теста.',
-    impact: 'в заказах +14 500 шт. (+60,0 млн ₽), в продажах +52,0 млн ₽, в марже +10,2 млн ₽, в маржинальности +0,4 п.п.',
-    coverage: '14 из 100 SKU',
+    name: 'Оптимизация рекламы под прибыль',
+    icon: <Megaphone size={16} />,
+    agent: 'Агент Рекламы',
+    desc: 'Сокращает неэффективные расходы и оставляет рекламу только там, где она приводит к заказам с положительной экономикой.',
+    algorithm: 'Отключать направления без заказов за 2 дня. Снижать ставку на 10–15% при CTR ниже 2%. По 14433382 — резко ограничить бюджет до подтверждения положительной маржи. По 59100591 — рекламу не запускать до пополнения остатка.',
+    impact: 'маржа +16 000 ₽, маржинальность +6,0 п.п., ДРР с 18,9% → 9–10%',
+    coverage: '4 артикула',
     freq: '1 раз в день',
     corrections: [],
   },
   {
     id: 4,
-    name: 'Управление отзывами для роста доверия и выкупа',
-    icon: <Star size={16} />,
+    name: 'Рост доверия и допродажи через отзывы',
+    icon: <MessageSquare size={16} />,
     agent: 'Агент Отзывов',
-    desc: 'Повышает рейтинг карточек через своевременные ответы и работу с негативом.',
-    algorithm: 'ежедневно мониторить новые отзывы; автоматически отвечать на позитивные; эскалировать критический негатив (1–2 звезды) для ручной обработки; запрашивать оценки у покупателей через 7 дней после доставки.',
-    impact: 'в заказах +3 200 шт. (+12,0 млн ₽), в марже +2,1 млн ₽',
-    coverage: 'вся матрица',
-    freq: '2 раза в день',
+    desc: 'Повышает доверие к карточкам и снижает потери конверсии через своевременные и аргументированные ответы.',
+    algorithm: 'Отвечать на все новые отзывы ежедневно. В позитивных — сценарии повторной покупки. В нейтральных — объяснять особенности. В негативных — спокойно и аргументированно. Усиливать доверие к 14433381 как основному товару.',
+    impact: 'маржа +3 000 ₽, маржинальность +1,1 п.п.',
+    coverage: '4 артикула',
+    freq: '1 раз в день',
     corrections: [],
   },
   {
     id: 5,
-    name: 'Ответы на вопросы для снятия барьеров покупки',
-    icon: <MessageSquare size={16} />,
-    agent: 'Агент Контента',
-    desc: 'Снижает количество потерянных сделок из-за отсутствия ответов на вопросы покупателей.',
-    algorithm: 'ежедневно проверять новые вопросы; формировать ответы на основе описания товара и частых обращений; публиковать ответы с акцентом на преимущества и вдохновляющий стиль.',
-    impact: 'в конверсии +0,3 п.п., в заказах +2 100 шт.',
-    coverage: 'вся матрица',
+    name: 'Повышение конверсии через ответы на вопросы',
+    icon: <MessageCircle size={16} />,
+    agent: 'Агент Вопросов',
+    desc: 'Помогает покупателям быстрее принять решение, закрывает возражения и снижает зависимость от скидок.',
+    algorithm: 'Отвечать на вопросы в день поступления. По товарам с низкой конверсией — конкретика: размер, состав, применение, ограничения. Фиксировать частые вопросы для улучшения карточек.',
+    impact: 'маржа +2 500 ₽, маржинальность +0,9 п.п.',
+    coverage: '4 артикула',
     freq: '1 раз в день',
     corrections: [],
   },
@@ -320,41 +327,206 @@ const REPORT_ROWS = [
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 
-const NAV_ICONS = [
-  { icon: <Eye size={18} />, label: 'Мониторинг' },
-  { icon: <BarChart3 size={18} />, label: 'Планы', active: true },
-  { icon: <Package size={18} />, label: 'Товары' },
-  { icon: <Tag size={18} />, label: 'Цены' },
-  { icon: <ShoppingBag size={18} />, label: 'Заказы' },
-  { icon: <Megaphone size={18} />, label: 'Реклама' },
-  { icon: <MessageSquare size={18} />, label: 'Отзывы' },
-  { icon: <Star size={18} />, label: 'Акции' },
-  { icon: <TrendingUp size={18} />, label: 'Аналитика' },
-  { icon: <Settings size={18} />, label: 'Настройки' },
+const SIDEBAR_BG     = '#F3EEFF'
+const SIDEBAR_BORDER = '#E4D9FF'
+const SIDEBAR_ACTIVE = '#EBE0FF'
+
+const TOP_NAV = [
+  { icon: <MessageCircle size={18} />,    label: 'Чат с Агентом' },
+  { icon: <LayoutGrid size={18} />,       label: 'Мониторинг' },
+  { icon: <Box size={18} />,              label: 'Все артикулы' },
+  { icon: <Activity size={18} />,         label: 'События' },
+  { icon: <TableProperties size={18} />,  label: 'Управление матрицей' },
 ]
 
-function Sidebar({ highlightPlans }) {
+const AUTO_SUB = [
+  { icon: <BarChart3 size={15} />,  label: 'Планы продаж', key: 'plans' },
+  { icon: <Zap size={15} />,        label: 'Сценарии', key: 'scenarios' },
+  { icon: <History size={15} />,    label: 'История',  key: 'history' },
+  { icon: <Calculator size={15} />, label: 'Финансы',  key: 'finance' },
+]
+
+function Sidebar({ highlightPlans, onNavigate }) {
+  const [open, setOpen]         = useState(false)
+  const [autoOpen, setAutoOpen] = useState(true)
+
   return (
-    <div className="w-14 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col items-center py-3 gap-1">
-      <div className="w-9 h-9 flex items-center justify-center mb-3">
-        <span className="font-black text-gray-900 text-lg leading-none">Ĵ</span>
-      </div>
-      {NAV_ICONS.map((item, i) => (
+    <div
+      className="relative flex-shrink-0 h-full"
+      style={{ width: 56 }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      {/* The actual panel — expands over content */}
+      <div
+        className="absolute left-0 top-0 h-full z-40 flex flex-col overflow-hidden transition-all duration-200 ease-out"
+        style={{
+          width: open ? 256 : 56,
+          background: SIDEBAR_BG,
+          borderRight: `1px solid ${SIDEBAR_BORDER}`,
+        }}
+      >
+        {/* Logo */}
+        <div className="flex-shrink-0 h-14 flex items-center gap-3 px-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-700">
+            <span className="font-black text-white text-sm leading-none">Ĵ</span>
+          </div>
+          <span
+            className="font-black text-purple-950 text-base tracking-wide whitespace-nowrap transition-opacity duration-150"
+            style={{ opacity: open ? 1 : 0 }}
+          >
+            ДЖИВИО
+          </span>
+        </div>
+
+        {/* Scrollable nav */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-1">
+
+          {/* Top items */}
+          {TOP_NAV.map((item, i) => (
+            <div
+              key={i}
+              title={!open ? item.label : undefined}
+              className="flex items-center gap-3 mx-2 px-2 py-2 rounded-xl cursor-pointer transition-colors hover:bg-purple-200/50"
+            >
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-purple-800">
+                {item.icon}
+              </div>
+              <span
+                className="text-sm font-medium text-purple-950 whitespace-nowrap transition-opacity duration-150"
+                style={{ opacity: open ? 1 : 0 }}
+              >
+                {item.label}
+              </span>
+            </div>
+          ))}
+
+          {/* Divider */}
+          <div className="mx-3 my-2" style={{ borderTop: `1px solid ${SIDEBAR_BORDER}` }} />
+
+          {/* Автоматизация */}
+          <div className="mx-2">
+            <button
+              onClick={() => setAutoOpen(v => !v)}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl transition-colors hover:bg-purple-200/50"
+            >
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-purple-800">
+                <Settings2 size={18} />
+              </div>
+              <span
+                className="flex-1 text-left text-sm font-medium text-purple-950 whitespace-nowrap transition-opacity duration-150"
+                style={{ opacity: open ? 1 : 0 }}
+              >
+                Автоматизация
+              </span>
+              {open && (
+                <span className="flex-shrink-0 text-purple-400 mr-1">
+                  {autoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </span>
+              )}
+            </button>
+
+            {/* Expanded sub-section */}
+            <div
+              className="overflow-hidden transition-all duration-200"
+              style={{ maxHeight: open && autoOpen ? 260 : 0, opacity: open ? 1 : 0 }}
+            >
+              <div className="mt-1 rounded-xl px-2 py-2" style={{ background: SIDEBAR_ACTIVE }}>
+                <p className="text-xs text-purple-500 leading-relaxed px-2 mb-2">
+                  Создавайте свои алгоритмы и используйте готовые, чтобы упростить и ускорить работу
+                </p>
+                {AUTO_SUB.map(sub => (
+                  <div
+                    key={sub.key}
+                    onClick={() => sub.key === 'plans' && onNavigate?.('plans')}
+                    className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors
+                      ${sub.key === 'plans' && highlightPlans
+                        ? 'bg-white shadow-sm cursor-pointer'
+                        : sub.key === 'plans'
+                          ? 'hover:bg-purple-300/30 cursor-pointer'
+                          : 'cursor-default opacity-50'}`}
+                  >
+                    <div className={`w-6 h-6 flex items-center justify-center flex-shrink-0
+                      ${sub.key === 'plans' && highlightPlans ? 'text-purple-700' : 'text-purple-600'}`}>
+                      {sub.icon}
+                    </div>
+                    <span className={`text-sm whitespace-nowrap
+                      ${sub.key === 'plans' && highlightPlans
+                        ? 'font-semibold text-purple-900'
+                        : 'font-medium text-purple-800'}`}>
+                      {sub.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-3 my-2" style={{ borderTop: `1px solid ${SIDEBAR_BORDER}` }} />
+
+          {/* SEO PRO */}
+          <div
+            title={!open ? 'SEO' : undefined}
+            className="flex items-center gap-3 mx-2 px-2 py-2 rounded-xl cursor-pointer transition-colors hover:bg-purple-200/50"
+          >
+            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-purple-800">
+              <Globe size={18} />
+            </div>
+            <span
+              className="flex-1 text-sm font-medium text-purple-950 whitespace-nowrap transition-opacity duration-150"
+              style={{ opacity: open ? 1 : 0 }}
+            >
+              SEO
+            </span>
+            {open && (
+              <>
+                <span className="flex-shrink-0 text-xs font-bold text-white bg-green-500 px-1.5 py-0.5 rounded-md mr-1">PRO</span>
+                <ChevronDown size={14} className="flex-shrink-0 text-purple-400" />
+              </>
+            )}
+          </div>
+
+          {/* Логистика PRO */}
+          <div
+            title={!open ? 'Логистика' : undefined}
+            className="flex items-center gap-3 mx-2 px-2 py-2 rounded-xl cursor-pointer transition-colors hover:bg-purple-200/50"
+          >
+            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-purple-800">
+              <Truck size={18} />
+            </div>
+            <span
+              className="flex-1 text-sm font-medium text-purple-950 whitespace-nowrap transition-opacity duration-150"
+              style={{ opacity: open ? 1 : 0 }}
+            >
+              Логистика
+            </span>
+            {open && (
+              <>
+                <span className="flex-shrink-0 text-xs font-bold text-white bg-green-500 px-1.5 py-0.5 rounded-md mr-1">PRO</span>
+                <ChevronDown size={14} className="flex-shrink-0 text-purple-400" />
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom: avatar + bell */}
         <div
-          key={i}
-          title={item.label}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-colors
-            ${(item.active && highlightPlans) ? 'bg-purple-50 text-purple-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+          className="flex-shrink-0 flex items-center gap-3 px-3 py-3 overflow-hidden"
+          style={{ borderTop: `1px solid ${SIDEBAR_BORDER}` }}
         >
-          {item.icon}
-        </div>
-      ))}
-      <div className="mt-auto flex flex-col items-center gap-2">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer">
-          <Bell size={18} />
-        </div>
-        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden cursor-pointer flex items-center justify-center text-xs font-medium text-gray-600">
-          WO
+          <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center text-xs font-bold text-purple-800 flex-shrink-0 cursor-pointer">
+            WO
+          </div>
+          <span
+            className="flex-1 text-sm font-medium text-purple-900 whitespace-nowrap transition-opacity duration-150"
+            style={{ opacity: open ? 1 : 0 }}
+          >
+            Мой профиль
+          </span>
+          {open && (
+            <Bell size={16} className="flex-shrink-0 text-purple-400 cursor-pointer hover:text-purple-700 transition-colors" />
+          )}
         </div>
       </div>
     </div>
@@ -363,12 +535,12 @@ function Sidebar({ highlightPlans }) {
 
 // ─── START SCREEN ─────────────────────────────────────────────────────────────
 
-function StartScreen({ onStart }) {
+function StartScreen({ onStart, onNavigate }) {
   const [task, setTask] = useState('')
 
   return (
     <div className="flex-1 flex">
-      <Sidebar highlightPlans={false} />
+      <Sidebar highlightPlans={false} onNavigate={onNavigate} />
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8">
         <div className="w-full max-w-lg">
           <div className="flex items-center gap-2 justify-center mb-6 text-gray-500 text-sm">
@@ -418,7 +590,7 @@ function StartScreen({ onStart }) {
 
 // ─── CHAT SCREEN ──────────────────────────────────────────────────────────────
 
-function ChatScreen({ initialTask, preset, onPlanReady }) {
+function ChatScreen({ initialTask, preset, onPlanReady, onNavigate }) {
   // preset: 'start' | 'full' | 'drawer'
   const isFullOrDrawer = preset === 'full' || preset === 'drawer'
   const [visible, setVisible] = useState(() => isFullOrDrawer ? CHAT_SCRIPT.map(s => s.id) : [0])
@@ -429,11 +601,17 @@ function ChatScreen({ initialTask, preset, onPlanReady }) {
   const skipAnalysis = preset === 'drawer'
   const bottomRef = useRef(null)
 
-  const handleShurshi = () => setShowPanel(true)
-
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [visible, typing])
+
+  // Auto-show panel when dialogue ends
+  useEffect(() => {
+    if (step >= CHAT_SCRIPT.length && !showPanel && !skipAnalysis) {
+      const t = setTimeout(() => setShowPanel(true), 700)
+      return () => clearTimeout(t)
+    }
+  }, [step])
 
   // Auto-advance chat
   useEffect(() => {
@@ -469,7 +647,7 @@ function ChatScreen({ initialTask, preset, onPlanReady }) {
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      <Sidebar highlightPlans={false} />
+      <Sidebar highlightPlans={false} onNavigate={onNavigate} />
       <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${showPanel ? '' : ''}`}>
         {/* Chat header */}
         <div className="flex-shrink-0 px-8 py-3 border-b border-gray-100 bg-white flex items-center justify-between">
@@ -496,15 +674,6 @@ function ChatScreen({ initialTask, preset, onPlanReady }) {
               ))}
               {typing && <TypingDots />}
               <div ref={bottomRef} />
-              {step >= CHAT_SCRIPT.length && !showPanel && (
-                <button
-                  onClick={handleShurshi}
-                  className={`w-full ${A.bg} ${A.bgHover} text-white rounded-xl py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 mt-4`}
-                >
-                  Давай, шурши
-                  <ArrowRight size={15} />
-                </button>
-              )}
             </div>
           </div>
 
@@ -594,57 +763,182 @@ function TypingDots() {
 
 // ─── ANALYSIS PANEL (Фича 1) ──────────────────────────────────────────────────
 
+const DRAWER_TABS = [
+  { id: 'analysis',   label: 'Анализ' },
+  { id: 'strategy',   label: 'Стратегия' },
+  { id: 'goals',      label: 'Цели' },
+  { id: 'scenarios',  label: 'Сценарии' },
+]
+
+// Текущая экономика за период данных (05.04–05.05)
+const STRATEGY_ECONOMY = [
+  { label: 'Продажи',              value: '88 527 ₽ / 66 шт.' },
+  { label: 'Расходы на рекламу',   value: '16 734 ₽ (18,9% от продаж)' },
+  { label: 'Себестоимость',        value: '31 644 ₽' },
+  { label: 'Комиссия WB',          value: '31 918 ₽' },
+  { label: 'Логистика',            value: '4 167 ₽' },
+  { label: 'Платное хранение',     value: '3 431 ₽' },
+  { label: 'Итоговая маржа',       value: '≈ 633 ₽' },
+  { label: 'Маржинальность',       value: '≈ 0,7%', highlight: true },
+]
+
+const STRATEGY_ARTICLES = [
+  { id: '14433381', sales: '49 190 ₽ / 38 шт.', stock: '78 шт. (~60 дней)', margin: '+5 168 ₽',  marginP: '+10,5%', verdict: 'Основной рабочий товар. База для роста маржи: аккуратно повышать цену, удерживать рекламу только по эффективным связкам.' },
+  { id: '14433382', sales: '29 210 ₽ / 11 шт.', stock: '410 шт.',           margin: '−2 836 ₽',  marginP: '−9,7%',  verdict: 'Высокий остаток, слабая экономика. Нельзя масштабировать без ограничения рекламы и пересмотра акций.' },
+  { id: '28920236', sales: '9 642 ₽ / 16 шт.',  stock: '40 шт.',            margin: '−1 455 ₽',  marginP: '−15,1%', verdict: 'Продаётся, но экономика отрицательная. Нужно повышение цены или отключение нерентабельной рекламы.' },
+  { id: '59100591', sales: '485 ₽ / 1 шт.',     stock: '0 шт.',             margin: '−243 ₽',    marginP: 'убыток', verdict: 'Выбыл из планирования — нет остатка. Не продвигать до пополнения склада.' },
+]
+
+const PLAN_PHASES = [
+  { days: 'Дни 1–7',   desc: 'Быстрый эффект: отключение нерентабельной рекламы, ограничение акций ниже минимальной цены' },
+  { days: 'Дни 8–14',  desc: 'Мягкое повышение цен по товарам с устойчивым спросом' },
+  { days: 'Дни 15–21', desc: 'Перераспределение рекламного бюджета только в товары и запросы с положительной маржей' },
+  { days: 'Дни 22–45', desc: 'Закрепление маржинальности на уровне 14–17%' },
+  { days: 'Дни 46–60', desc: 'Выход на дневную маржинальность 18–18,5%' },
+]
+
+const GOALS_KPIS = [
+  { label: 'Итоговая маржа за план', value: '42 330 ₽',  sub: '06.05–04.07, 60 дней' },
+  { label: 'Целевая маржинальность', value: '18,5%',      sub: 'к концу периода' },
+  { label: 'Начальная точка',        value: '0,7%',       sub: 'маржинальность сейчас' },
+  { label: 'Прирост маржинальности', value: '+15–18 п.п.', sub: 'за 60 дней' },
+]
+
+// Недельный план маржинальности (factMargin/factMarginP — только для завершённых недель)
+const WEEKLY_PLAN = [
+  { week: 'Нед 1', dates: '06–10.05',    margin: 1490,  marginP: 8.8,  factMargin: 1540,  factMarginP: 9.1  },
+  { week: 'Нед 2', dates: '11–17.05',    margin: 3210,  marginP: 10.2, factMargin: 3360,  factMarginP: 10.5 },
+  { week: 'Нед 3', dates: '18–24.05',    margin: 4020,  marginP: 11.6, factMargin: 3920,  factMarginP: 11.3 },
+  { week: 'Нед 4', dates: '25–31.05',    margin: 4720,  marginP: 12.8, factMargin: 5280,  factMarginP: 13.1 },
+  { week: 'Нед 5', dates: '01–07.06',    margin: 5230,  marginP: 14.0, factMargin: null,  factMarginP: null },
+  { week: 'Нед 6', dates: '08–14.06',    margin: 5650,  marginP: 15.1, factMargin: null,  factMarginP: null },
+  { week: 'Нед 7', dates: '15–21.06',    margin: 5990,  marginP: 16.0, factMargin: null,  factMarginP: null },
+  { week: 'Нед 8', dates: '22–28.06',    margin: 6290,  marginP: 16.8, factMargin: null,  factMarginP: null },
+  { week: 'Нед 9', dates: '29.06–04.07', margin: 5730,  marginP: 17.8, factMargin: null,  factMarginP: null },
+]
+
+// ─── PLANS LIST DATA ─────────────────────────────────────────────────────────
+
+const PLANS_LIST = [
+  {
+    id: 1,
+    name: 'Вся матрица Wildberries — 60 дней',
+    fullName: 'Вся матрица Wildberries — 60 дней (06.05–04.07)',
+    status: 'active',
+    goal: 42330,
+    current: 14100,
+    remaining: 28230,
+    pct: 33,
+    delta: +0.3,
+    daysLeft: 31,
+    marginNow: 13.1,
+    marginPlan: 12.8,
+    marginGoal: 18.5,
+    updatedAt: '25.05',
+    desc: 'Стартовая точка — маржинальность 0,7% при ДРР 18,9%. Цель: довести маржу до 18,5% за 60 дней через управление ценой, фильтрацию акций и оптимизацию рекламы.',
+    sparkline: [8.8, 9.1, 11.3, 13.1],
+    canOpen: true,
+  },
+  {
+    id: 2,
+    name: 'Летняя коллекция OZON — 45 дней',
+    fullName: 'Летняя коллекция OZON — 45 дней (10.04–24.05)',
+    status: 'done',
+    goal: 31000,
+    current: 31800,
+    remaining: 0,
+    pct: 103,
+    delta: +2.1,
+    daysLeft: 0,
+    marginNow: 19.4,
+    marginPlan: 18.0,
+    marginGoal: 18.0,
+    updatedAt: '24.05',
+    desc: 'План перевыполнен: маржинальность 19,4% при цели 18%. Ключевой драйвер — оптимизация рекламных ставок и участие в двух акциях с положительной маржой.',
+    sparkline: [9.2, 11.4, 14.0, 15.8, 17.2, 19.4],
+    canOpen: false,
+  },
+  {
+    id: 3,
+    name: 'Новинки категории "Дом" WB — 30 дней',
+    fullName: 'Новинки категории "Дом" WB — 30 дней (01.05–31.05)',
+    status: 'active',
+    goal: 18000,
+    current: 6100,
+    remaining: 11900,
+    pct: 34,
+    delta: -1.2,
+    daysLeft: 12,
+    marginNow: 9.8,
+    marginPlan: 11.0,
+    marginGoal: 14.0,
+    updatedAt: '24.05',
+    desc: 'Новые артикулы ещё в фазе набора отзывов. Маржинальность ниже плана на 1,2 п.п. — агент скорректировал рекламные ставки, ожидается улучшение на нед. 4.',
+    sparkline: [5.1, 7.3, 8.9, 9.8],
+    canOpen: false,
+  },
+]
+
+// График план vs факт маржинальность + действия агента по неделям
+// actReviews — ответы на отзывы, actClusters — изм. кластеров, actPrice — изм. цены
+const MARGIN_CHART_DATA = [
+  { week: 'Нед 1', план: 8.8,  факт: 9.1,  actReviews: 4, actClusters: 2, actPrice: 3 },
+  { week: 'Нед 2', план: 10.2, факт: 10.5, actReviews: 6, actClusters: 1, actPrice: 4 },
+  { week: 'Нед 3', план: 11.6, факт: 11.3, actReviews: 5, actClusters: 3, actPrice: 2 },
+  { week: 'Нед 4', план: 12.8, факт: 13.1, actReviews: 7, actClusters: 2, actPrice: 5 },
+  { week: 'Нед 5', план: 14.0, факт: null, actReviews: null, actClusters: null, actPrice: null },
+  { week: 'Нед 6', план: 15.1, факт: null, actReviews: null, actClusters: null, actPrice: null },
+  { week: 'Нед 7', план: 16.0, факт: null, actReviews: null, actClusters: null, actPrice: null },
+  { week: 'Нед 8', план: 16.8, факт: null, actReviews: null, actClusters: null, actPrice: null },
+  { week: 'Нед 9', план: 17.8, факт: null, actReviews: null, actClusters: null, actPrice: null },
+]
+
 function AnalysisPanel({ skipToEnd, onLaunch }) {
-  const [step, setStep] = useState(skipToEnd ? 99 : 0)
-  const timers = useRef([])
+  const [step, setStep]           = useState(skipToEnd ? 99 : 0)
+  const [drawerTab, setDrawerTab] = useState('analysis')
+  const timers   = useRef([])
   const scrollRef = useRef(null)
 
-  const clearAll = () => { timers.current.forEach(clearTimeout); timers.current = [] }
+  const clearAll  = () => { timers.current.forEach(clearTimeout); timers.current = [] }
   const jumpToEnd = () => { clearAll(); setStep(99) }
 
   useEffect(() => {
     if (skipToEnd) return
     const s = (fn, ms) => { const t = setTimeout(fn, ms); timers.current.push(t) }
-    // Act 1 — reasoning lines (~0–9s)
     s(() => setStep(1),  100)
     s(() => setStep(2),  1900)
     s(() => setStep(3),  3700)
     s(() => setStep(4),  5500)
     s(() => setStep(5),  7300)
-    // Act 2 — insights (~8–18s)
     s(() => setStep(6),  9000)
     s(() => setStep(7),  12000)
     s(() => setStep(8),  15000)
-    // Act 3 — scenario candidates (~18–22s)
     s(() => setStep(9),  18000)
     s(() => setStep(10), 18600)
     s(() => setStep(11), 19200)
     s(() => setStep(12), 19800)
     s(() => setStep(13), 20400)
-    // Rejections appear
     s(() => setStep(14), 22500)
-    // Act 4 — hide rejected, finalize (~28–30s)
     s(() => setStep(15), 28000)
     s(() => setStep(16), 28800)
     s(() => setStep(17), 29500)
     return clearAll
   }, [])
 
-  // Auto-scroll as content grows
+  // Auto-scroll analysis tab as content grows
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && drawerTab === 'analysis') {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [step])
 
-  const isFinal = step >= 17 || step === 99
+  const isFinal          = step >= 17 || step === 99
   const visibleReasoning = step === 99 ? 5 : Math.min(step, 5)
-  const visibleInsights  = step === 99 ? 3 : Math.max(0, step - 5)   // step6→1, 7→2, 8→3
-  const visibleScenarios = step === 99 ? 5 : Math.max(0, step - 8)   // step9→1 … 13→5
+  const visibleInsights  = step === 99 ? 3 : Math.max(0, step - 5)
+  const visibleScenarios = step === 99 ? 5 : Math.max(0, step - 8)
   const showRejections   = step === 99 || step >= 14
   const hideRejected     = step === 99 || step >= 15
 
-  // Opacity cascade: newest line = 1.0, then 0.6, 0.4, 0.25
   const reasoningOpacity = (idx) => {
     const fromEnd = visibleReasoning - 1 - idx
     if (fromEnd === 0) return 1
@@ -655,104 +949,262 @@ function AnalysisPanel({ skipToEnd, onLaunch }) {
 
   return (
     <div className="w-1/2 flex-shrink-0 border-l border-gray-100 bg-white flex flex-col overflow-hidden">
-      {/* Sticky header */}
-      <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
-        <span className="text-sm font-semibold text-gray-900">
-          {isFinal ? 'План готов' : 'Анализирую матрицу...'}
-        </span>
-        {!isFinal && (
-          <button
-            onClick={jumpToEnd}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Пропустить
-          </button>
-        )}
+
+      {/* ── Header: title + tabs ── */}
+      <div className="flex-shrink-0 px-6 pt-5 pb-3 border-b border-gray-100 bg-white">
+        <p className="font-bold text-gray-900 leading-snug mb-4 text-sm">
+          План продаж:<br />
+          <span className="text-base">Вся матрица Wildberries на 60 дней (06.05–04.07)</span>
+        </p>
+        {/* Tab bar — Figma style */}
+        <div className="flex gap-1 p-0.5 border border-[#f4f4f4] rounded w-fit">
+          {DRAWER_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setDrawerTab(tab.id)}
+              className={`px-5 py-2 text-sm font-semibold rounded transition-all whitespace-nowrap ${
+                drawerTab === tab.id
+                  ? 'bg-white border border-[#bfbfbf] text-[#2b2b2b] shadow-sm'
+                  : 'text-[#808080] hover:text-[#404040]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Scrollable content */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+      {/* ── Scrollable content ── */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
 
-        {/* Reasoning stream */}
-        {visibleReasoning > 0 && (
-          <div className="border-l-2 border-gray-200 pl-4 space-y-2.5">
-            {REASONING_LINES.slice(0, visibleReasoning).map((line, idx) => (
-              <p
-                key={idx}
-                className="text-sm text-gray-600 fade-in-up"
-                style={{ opacity: reasoningOpacity(idx), transition: 'opacity 0.4s ease' }}
-              >
-                • {line}
-              </p>
-            ))}
+        {/* ── АНАЛИЗ ── */}
+        {drawerTab === 'analysis' && (
+          <div className="px-5 py-5 space-y-6">
+            {!isFinal && (
+              <div className="flex justify-end">
+                <button onClick={jumpToEnd} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                  Пропустить
+                </button>
+              </div>
+            )}
+            {visibleReasoning > 0 && (
+              <div className="border-l-2 border-gray-200 pl-4 space-y-2.5">
+                {REASONING_LINES.slice(0, visibleReasoning).map((line, idx) => (
+                  <p key={idx} className="text-sm text-gray-600 fade-in-up"
+                    style={{ opacity: reasoningOpacity(idx), transition: 'opacity 0.4s ease' }}>
+                    • {line}
+                  </p>
+                ))}
+              </div>
+            )}
+            {visibleInsights > 0 && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Найдено</p>
+                <div className="space-y-2">
+                  {INSIGHT_CARDS.slice(0, visibleInsights).map((card, idx) => (
+                    <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-start gap-2.5 fade-in-up">
+                      {card.icon === 'TrendingUp'    && <TrendingUp    size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />}
+                      {card.icon === 'AlertCircle'   && <AlertCircle   size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />}
+                      {card.icon === 'AlertTriangle' && <AlertTriangle size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />}
+                      <p className="text-sm text-gray-700">{card.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {visibleScenarios > 0 && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Подбираю сценарии</p>
+                <div className="space-y-2">
+                  {SCENARIO_CANDIDATES.slice(0, visibleScenarios).map((sc) => {
+                    const isRejected = showRejections && sc.rejected
+                    const isHidden   = hideRejected   && sc.rejected
+                    return (
+                      <div key={sc.id} className="fade-in-up" style={{
+                        maxHeight: isHidden ? 0 : '160px',
+                        opacity: isHidden ? 0 : 1,
+                        overflow: 'hidden',
+                        marginBottom: isHidden ? 0 : undefined,
+                        transition: 'max-height 0.4s ease, opacity 0.4s ease, margin 0.4s ease',
+                      }}>
+                        <div className={`border rounded-lg p-4 ${isRejected ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
+                          <p className={`text-sm font-medium leading-snug ${isRejected ? 'line-through text-gray-400' : 'text-gray-900'}`}>{sc.name}</p>
+                          <p className={`text-xs mt-1 leading-relaxed ${isRejected ? 'line-through text-gray-300' : 'text-gray-500'}`}>{sc.desc}</p>
+                          {isRejected && sc.reason && (
+                            <p className="text-xs text-red-400 mt-1.5" style={{ opacity: 0.8 }}>{sc.reason}</p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Insights */}
-        {visibleInsights > 0 && (
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Найдено</p>
-            <div className="space-y-2">
-              {INSIGHT_CARDS.slice(0, visibleInsights).map((card, idx) => (
-                <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-start gap-2.5 fade-in-up">
-                  {card.icon === 'TrendingUp'    && <TrendingUp    size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />}
-                  {card.icon === 'AlertCircle'   && <AlertCircle   size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />}
-                  {card.icon === 'AlertTriangle' && <AlertTriangle size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />}
-                  <p className="text-sm text-gray-700">{card.text}</p>
+        {/* ── СТРАТЕГИЯ ── */}
+        {drawerTab === 'strategy' && (
+          <div className="px-6 py-5 space-y-5">
+            {/* Текущая экономика */}
+            <div>
+              <p className="text-sm font-semibold text-[#404040] mb-3">Текущая экономика (05.04–05.05)</p>
+              <div className="border border-[#eaeaea] rounded-xl overflow-hidden">
+                {STRATEGY_ECONOMY.map((row, i) => (
+                  <div key={i} className={`flex items-center justify-between px-4 py-2.5 text-sm ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${row.highlight ? 'border-t border-amber-100 bg-amber-50' : ''}`}>
+                    <span className="text-[#6b6b6b]">{row.label}</span>
+                    <span className={`font-semibold ${row.highlight ? 'text-amber-700' : 'text-[#2b2b2b]'}`}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Ключевая проблема */}
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-[#2b2b2b] leading-relaxed">
+              <span className="font-semibold">Ключевая проблема: </span>
+              продажи есть, но почти вся прибыль съедается рекламой, комиссией, логистикой и платным хранением. Стратегия — не резкое наращивание оборота, а управляемое улучшение экономики через оптимизацию рекламы, защиту цены и контроль акций.
+            </div>
+
+            {/* По артикулам */}
+            <div>
+              <p className="text-sm font-semibold text-[#404040] mb-3">Анализ по артикулам</p>
+              <div className="space-y-2.5">
+                {STRATEGY_ARTICLES.map(art => (
+                  <div key={art.id} className="border border-[#eaeaea] rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-[#808080]">Артикул {art.id}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${art.marginP.startsWith('+') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                        {art.marginP}
+                      </span>
+                    </div>
+                    <div className="flex gap-4 text-xs text-[#6b6b6b] mb-2">
+                      <span>Продажи: <span className="text-[#2b2b2b] font-medium">{art.sales}</span></span>
+                      <span>Остаток: <span className="text-[#2b2b2b] font-medium">{art.stock}</span></span>
+                      <span>Маржа: <span className={`font-medium ${art.margin.startsWith('−') ? 'text-red-500' : 'text-green-600'}`}>{art.margin}</span></span>
+                    </div>
+                    <p className="text-xs text-[#6b6b6b] leading-relaxed">{art.verdict}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Логика плана */}
+            <div>
+              <p className="text-sm font-semibold text-[#404040] mb-3">Логика реализации плана</p>
+              <div className="space-y-2">
+                {PLAN_PHASES.map((phase, i) => (
+                  <div key={i} className="flex gap-3 text-sm">
+                    <span className="flex-shrink-0 w-20 text-xs font-semibold text-purple-600 pt-0.5">{phase.days}</span>
+                    <span className="text-[#404040] leading-relaxed">{phase.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ЦЕЛИ ── */}
+        {drawerTab === 'goals' && (
+          <div className="px-6 py-5 space-y-5">
+            <p className="text-sm font-semibold text-[#404040]">Цели плана на 60 дней (06.05–04.07)</p>
+
+            {/* KPI карточки */}
+            <div className="grid grid-cols-2 gap-3">
+              {GOALS_KPIS.map((kpi, i) => (
+                <div key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 mb-1">{kpi.label}</p>
+                  <p className="text-base font-bold text-gray-900 leading-tight">{kpi.value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{kpi.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* График маржинальности */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <p className="text-xs font-semibold text-gray-700 mb-3">Плановый рост маржинальности, %</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={WEEKLY_PLAN} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="week" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, 20]} />
+                  <Tooltip formatter={(v, name) => [`${v}%`, name]} labelFormatter={v => `${v} (${WEEKLY_PLAN.find(w => w.week === v)?.dates})`} />
+                  <Line type="monotone" dataKey="marginP" name="Маржинальность" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3, fill: '#7c3aed' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Недельный план */}
+            <div>
+              <p className="text-xs font-semibold text-[#404040] mb-2">Недельный план маржи</p>
+              <div className="border border-[#eaeaea] rounded-xl overflow-hidden">
+                <div className="grid grid-cols-3 bg-gray-50 px-4 py-2 text-xs font-semibold text-[#808080]">
+                  <span>Неделя</span><span>Даты</span><span className="text-right">Маржа / Маржинальность</span>
+                </div>
+                {WEEKLY_PLAN.map((row, i) => (
+                  <div key={i} className={`grid grid-cols-3 px-4 py-2.5 text-xs border-t border-[#f4f4f4] ${i === WEEKLY_PLAN.length - 1 ? 'bg-purple-50 font-semibold' : ''}`}>
+                    <span className="text-[#2b2b2b]">{row.week}</span>
+                    <span className="text-[#808080]">{row.dates}</span>
+                    <span className="text-right text-[#2b2b2b]">{row.margin.toLocaleString('ru')} ₽ / {row.marginP}%</span>
+                  </div>
+                ))}
+                <div className="grid grid-cols-3 px-4 py-2.5 text-xs border-t border-purple-200 bg-purple-50 font-semibold">
+                  <span className="text-purple-900" colSpan={2}>Итого</span>
+                  <span /><span className="text-right text-purple-900">42 330 ₽ → 18,5%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── СЦЕНАРИИ ── */}
+        {drawerTab === 'scenarios' && (
+          <div className="px-6 py-5">
+            <p className="text-sm font-semibold text-[#404040] mb-4">Сценарии автоматизации через агентов</p>
+            <div className="space-y-3">
+              {SCENARIOS_PROPOSAL.map((sc, i) => (
+                <div key={sc.id} className="bg-white border border-[#eaeaea] rounded-xl p-4 space-y-2">
+                  <p className="text-xs font-semibold text-[#808080]">Сценарий {i + 1}</p>
+                  <div>
+                    <p className="font-bold text-[#2b2b2b] text-base leading-snug">{sc.name}</p>
+                    <p className="text-xs text-[#2b2b2b] mt-1 leading-relaxed font-medium">{sc.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1 border border-[#bfbfbf] rounded-lg px-2 py-1">
+                      <Zap size={12} className="text-gray-500 flex-shrink-0" />
+                      <span className="text-xs font-medium text-[#2b2b2b]">{sc.agent}</span>
+                    </div>
+                    <span className="text-xs text-[#6b6b6b]">
+                      <span className="font-semibold">Охват:</span>{' '}
+                      <span style={{ color: '#b869af' }}>{sc.coverage}</span>
+                    </span>
+                    <span className="text-xs text-[#6b6b6b]">
+                      <span className="font-semibold">Периодичность:</span> {sc.freq}
+                    </span>
+                  </div>
+                  {sc.algorithm && (
+                    <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+                      <p className="text-xs text-[#808080] leading-relaxed">{sc.algorithm}</p>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs text-[#6b6b6b] leading-relaxed">
+                      <span className="font-semibold">Ожидаемый вклад: </span>{sc.impact}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-
-        {/* Scenario candidates */}
-        {visibleScenarios > 0 && (
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Подбираю сценарии</p>
-            <div className="space-y-2">
-              {SCENARIO_CANDIDATES.slice(0, visibleScenarios).map((sc) => {
-                const isRejected = showRejections && sc.rejected
-                const isHidden   = hideRejected   && sc.rejected
-                return (
-                  <div
-                    key={sc.id}
-                    className="fade-in-up"
-                    style={{
-                      maxHeight: isHidden ? 0 : '160px',
-                      opacity:   isHidden ? 0 : 1,
-                      overflow:  'hidden',
-                      marginBottom: isHidden ? 0 : undefined,
-                      transition: 'max-height 0.4s ease, opacity 0.4s ease, margin 0.4s ease',
-                    }}
-                  >
-                    <div className={`border rounded-lg p-4 ${isRejected ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
-                      <p className={`text-sm font-medium leading-snug ${isRejected ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                        {sc.name}
-                      </p>
-                      <p className={`text-xs mt-1 leading-relaxed ${isRejected ? 'line-through text-gray-300' : 'text-gray-500'}`}>
-                        {sc.desc}
-                      </p>
-                      {isRejected && sc.reason && (
-                        <p className="text-xs text-red-400 mt-1.5 fade-in-up" style={{ opacity: 0.8 }}>
-                          {sc.reason}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Sticky footer — CTA */}
+      {/* ── Sticky footer — CTA ── */}
       <div
         className="flex-shrink-0 p-4 border-t border-gray-100 bg-white"
         style={{
-          opacity:   isFinal ? 1 : 0,
-          transform: isFinal ? 'translateY(0)' : 'translateY(6px)',
-          transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
+          opacity:      isFinal ? 1 : 0,
+          transform:    isFinal ? 'translateY(0)' : 'translateY(6px)',
+          transition:   'opacity 0.4s ease-out, transform 0.4s ease-out',
           pointerEvents: isFinal ? 'auto' : 'none',
         }}
       >
@@ -822,49 +1274,229 @@ function ScenarioToast({ onDismiss }) {
 
 // ─── PLANS LIST ───────────────────────────────────────────────────────────────
 
-function PlansScreen({ onOpenPlan, onCreatePlan }) {
+
+const SORT_OPTIONS = [
+  { key: 'default', label: 'По умолчанию' },
+  { key: 'name',    label: 'По названию' },
+  { key: 'delta',   label: 'По отклонению' },
+  { key: 'pct',     label: 'По выполнению' },
+]
+
+function PlansScreen({ planExists, onOpenPlan, onCreatePlan, onNavigate }) {
+  const [selected, setSelected] = useState(0)
+  const [sortBy, setSortBy] = useState('default')
+
+  const sorted = [...PLANS_LIST].sort((a, b) => {
+    if (sortBy === 'pct')   return b.pct - a.pct
+    if (sortBy === 'delta') return b.delta - a.delta
+    if (sortBy === 'name')  return a.name.localeCompare(b.name, 'ru')
+    return 0
+  })
+
+  const plan = sorted[selected]
+
   return (
     <div className="flex-1 flex overflow-hidden">
-      <Sidebar highlightPlans />
+      <Sidebar highlightPlans onNavigate={onNavigate} />
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
-        <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Планы</h1>
-          <button
-            onClick={onCreatePlan}
-            className={`flex items-center gap-2 ${A.bg} ${A.bgHover} text-white text-sm px-4 py-2 rounded-lg transition-colors`}
-          >
-            <Plus size={15} />
-            Создать план
-          </button>
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+          <h1 className="text-xl font-bold text-gray-900">Планы продаж</h1>
+          {planExists && (
+            <button onClick={onCreatePlan}
+              className={`flex items-center gap-2 ${A.bg} ${A.bgHover} text-white text-sm px-4 py-2 rounded-lg transition-colors`}>
+              <Plus size={15} />Создать план
+            </button>
+          )}
         </div>
-        <div className="flex-1 overflow-y-auto p-8">
-          <div
-            className="border border-gray-200 rounded-xl p-5 cursor-pointer hover:border-purple-200 hover:bg-purple-50/30 transition-colors"
-            onClick={onOpenPlan}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 mb-1">Вся матрица Wildberries на 3 месяца (до 24.06.26)</p>
-                <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
-                  Стратегия достижения плана строится не вокруг одного рычага, а вокруг последовательной системы автоматизации. В текущих данных видно, что бизнес уже имеет хороший оборот, но часть потенциала теряется на трёх уровнях...
-                </p>
+
+        {!planExists ? (
+          /* ── Empty state ── */
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+            <div className="w-16 h-16 rounded-2xl bg-purple-50 flex items-center justify-center">
+              <BarChart3 size={28} className="text-purple-400" />
+            </div>
+            <div className="text-center max-w-xs">
+              <p className="text-lg font-semibold text-gray-900 mb-2">Нет ни одного плана</p>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Создайте первый план продаж — агент проанализирует матрицу и предложит стратегию достижения цели
+              </p>
+            </div>
+            <button onClick={onCreatePlan}
+              className={`flex items-center gap-2 ${A.bg} ${A.bgHover} text-white text-base font-semibold px-8 py-3 rounded-xl transition-colors shadow-sm`}>
+              <Plus size={18} />Создать план продаж
+            </button>
+          </div>
+        ) : (
+          /* ── List + Detail ── */
+          <div className="flex-1 flex overflow-hidden">
+
+            {/* Left: plan list */}
+            <div className="w-96 flex-shrink-0 border-r border-gray-100 flex flex-col overflow-hidden">
+              {/* Sort controls */}
+              <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs text-gray-400 flex-shrink-0">Сортировка</span>
+                <select
+                  value={sortBy}
+                  onChange={e => { setSortBy(e.target.value); setSelected(0) }}
+                  className="flex-1 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none cursor-pointer hover:border-gray-300 focus:border-purple-400 transition-colors"
+                >
+                  {SORT_OPTIONS.map(opt => (
+                    <option key={opt.key} value={opt.key}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
-              <div className="flex gap-8 flex-shrink-0 text-right">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Цель плана</p>
-                  <p className="font-bold text-gray-900">1 128 567 343 ₽</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Выполнение плана</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-gray-900">48%</p>
-                    <span className="text-xs bg-red-100 text-red-600 font-medium px-1.5 py-0.5 rounded">-11%</span>
+              {/* List */}
+              <div className="flex-1 overflow-y-auto">
+                {sorted.map((p, i) => {
+                  const isActive = i === selected
+                  const ahead = p.delta >= 0
+                  return (
+                    <div key={p.id} onClick={() => setSelected(i)}
+                      className={`group/row relative px-4 py-4 cursor-pointer border-b border-gray-100 transition-colors
+                        ${isActive ? 'bg-purple-50 border-l-2 border-l-purple-500' : 'hover:bg-gray-50 border-l-2 border-l-transparent'}`}>
+                      {/* Name + hover arrow */}
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${p.status === 'active' ? 'bg-green-500 breathe-dot' : 'bg-gray-300'}`} />
+                        <p className={`text-sm font-medium leading-snug flex-1 ${isActive ? 'text-purple-900' : 'text-gray-800'}`}>
+                          {p.name}
+                        </p>
+                        {p.canOpen && (
+                          <button
+                            onClick={e => { e.stopPropagation(); onOpenPlan() }}
+                            className="opacity-0 group-hover/row:opacity-100 transition-opacity flex-shrink-0
+                              w-6 h-6 rounded-md bg-white border border-gray-200 shadow-sm flex items-center justify-center
+                              text-gray-400 hover:text-purple-600 hover:border-purple-300"
+                          >
+                            <ArrowRight size={12} />
+                          </button>
+                        )}
+                      </div>
+                      {/* Metrics row */}
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { label: 'Выполнение', value: `${p.pct}%`, color: p.pct > 100 ? 'text-green-600' : 'text-purple-600' },
+                          { label: 'Отклонение', value: `${ahead ? '+' : ''}${p.delta}%`, color: ahead ? 'text-green-600' : 'text-red-500' },
+                          { label: 'План', value: `${p.goal.toLocaleString('ru')} ₽`, color: 'text-gray-700' },
+                          { label: 'Факт', value: `${p.current.toLocaleString('ru')} ₽`, color: 'text-gray-700' },
+                        ].map(m => (
+                          <div key={m.label}>
+                            <p className="text-xs text-gray-400 mb-0.5">{m.label}</p>
+                            <p className={`text-sm font-medium ${m.color}`}>{m.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Right: plan detail */}
+            <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+              <div className="max-w-2xl mx-auto space-y-4">
+
+                {/* Header card */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  {/* Toolbar */}
+                  <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-100">
+                    <h2 className="text-base font-bold text-gray-900 leading-snug flex-1">{plan.fullName}</h2>
+                    <button
+                      onClick={plan.canOpen ? onOpenPlan : undefined}
+                      className={`flex-shrink-0 flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors
+                        ${plan.canOpen
+                          ? `${A.bg} ${A.bgHover} text-white`
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                    >
+                      Открыть план <ArrowRight size={14} />
+                    </button>
+                  </div>
+                  {/* Status + date */}
+                  <div className="flex items-center gap-2 mb-3">
+                    {plan.status === 'active'
+                      ? <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-0.5 rounded-full">Планом управляет Агент</span>
+                      : <span className="bg-gray-100 text-gray-500 text-xs font-medium px-2 py-0.5 rounded-full">Завершён</span>}
+                    <span className="text-xs text-gray-400">
+                      Обновлён {plan.updatedAt}{plan.status === 'active' ? ' · след. через неделю' : ''}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed">{plan.desc}</p>
+
+                  {/* Metrics */}
+                  <div className="mt-4 grid grid-cols-4 gap-3 border-t border-gray-100 pt-4">
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Цель по марже</p>
+                      <p className="text-base font-bold text-gray-900">{plan.goal.toLocaleString('ru')} ₽</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Текущая маржа</p>
+                      <p className="text-base font-bold text-gray-900">{plan.current.toLocaleString('ru')} ₽</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">До выполнения</p>
+                      <p className="text-base font-bold text-gray-900">
+                        {plan.remaining > 0 ? `${plan.remaining.toLocaleString('ru')} ₽` : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Выполнение</p>
+                      <p className={`text-base font-bold ${plan.pct > 100 ? 'text-green-600' : 'text-purple-600'}`}>{plan.pct}%</p>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mt-3">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${plan.pct > 100 ? 'bg-green-500' : 'bg-purple-500'}`}
+                        style={{ width: `${Math.min(plan.pct, 100)}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>0 ₽</span>
+                      <span>{plan.goal.toLocaleString('ru')} ₽</span>
+                    </div>
+                  </div>
+
+                  {/* Secondary metrics */}
+                  <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3">
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Маржинальность сейчас</p>
+                      <p className="text-sm font-bold text-gray-900">{plan.marginNow}%
+                        <span className={`ml-1.5 text-xs font-semibold ${plan.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                          {plan.delta >= 0 ? '↑' : '↓'}{Math.abs(plan.delta)}% к плану
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">
+                        {plan.status === 'active' ? 'До завершения' : 'Продолжительность'}
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {plan.status === 'active' ? `${plan.daysLeft} дней` : 'Завершён'}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Chart */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <p className="text-sm font-semibold text-gray-900 mb-3">Маржинальность по неделям, %</p>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <LineChart data={MARGIN_CHART_DATA} margin={{ top: 4, right: 12, bottom: 4, left: -8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="week" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, 20]} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(v, n) => [v !== null ? `${v}%` : '—', n]} labelFormatter={v => v} />
+                      <Line type="linear" dataKey="план" name="План" stroke="#d1d5db" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
+                      <Line type="linear" dataKey="факт" name="Факт" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3, fill: '#7c3aed', strokeWidth: 0 }} connectNulls={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -872,7 +1504,7 @@ function PlansScreen({ onOpenPlan, onCreatePlan }) {
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
-function DashboardScreen({ initialTab, onReport, onAllPlans }) {
+function DashboardScreen({ initialTab, onReport, onAllPlans, onNavigate }) {
   const [tab, setTab] = useState(initialTab || 'plan')
   const [expandDesc, setExpandDesc] = useState(false)
   const [selectedScenario, setSelectedScenario] = useState(0)
@@ -886,6 +1518,8 @@ function DashboardScreen({ initialTab, onReport, onAllPlans }) {
   const [correctionToast, setCorrectionToast] = useState(false)
   // info popover
   const [showInfo, setShowInfo] = useState(false)
+  // breadcrumb plans dropdown
+  const [showPlansDropdown, setShowPlansDropdown] = useState(false)
   // Фича 3 — toast
   const [showToast, setShowToast] = useState(false)
   const toastShown = useRef(false)
@@ -943,21 +1577,60 @@ function DashboardScreen({ initialTab, onReport, onAllPlans }) {
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      <Sidebar highlightPlans />
+      <Sidebar highlightPlans onNavigate={onNavigate} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Breadcrumb + header */}
         <div className="flex-shrink-0 bg-white border-b border-gray-100">
           <div className="px-6 pt-3 pb-0">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <button onClick={onAllPlans} className="hover:text-purple-600 transition-colors">Планы</button>
+                <div className="relative"
+                  onMouseEnter={() => setShowPlansDropdown(true)}
+                  onMouseLeave={() => setShowPlansDropdown(false)}>
+                  <button className={`transition-colors flex items-center gap-0.5 ${showPlansDropdown ? 'text-purple-600' : 'hover:text-purple-600'}`}>
+                    Планы продаж
+                    <ChevronDown size={11} className={`ml-0.5 transition-opacity ${showPlansDropdown ? 'opacity-100' : 'opacity-0'}`} />
+                  </button>
+                  {/* Notion-style dropdown */}
+                  <div className={`absolute left-0 top-full pt-1 w-72 z-50 ${showPlansDropdown ? '' : 'hidden'}`}>
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-lg">
+                    <div className="p-1.5">
+                      {PLANS_LIST.map(p => (
+                        <button key={p.id} onClick={p.canOpen ? onAllPlans : undefined}
+                          className={`w-full text-left px-3 py-2 rounded-lg flex items-start gap-2.5 transition-colors
+                            ${p.id === 1 ? 'bg-purple-50' : 'hover:bg-gray-50'}
+                            ${!p.canOpen ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${p.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium leading-snug truncate ${p.id === 1 ? 'text-purple-900' : 'text-gray-700'}`}>
+                              {p.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-gray-400">{p.pct}%</span>
+                              <span className={`${p.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                {p.delta >= 0 ? '+' : ''}{p.delta}%
+                              </span>
+                              <span className="text-gray-300">{p.current.toLocaleString('ru')} ₽</span>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="border-t border-gray-100 p-1.5">
+                      <button onClick={onAllPlans}
+                        className="w-full text-left px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors flex items-center gap-1.5">
+                        <List size={11} />
+                        Все планы продаж
+                      </button>
+                    </div>
+                  </div>
+                  </div>
+                </div>
                 <ChevronRight size={12} />
                 <span className="text-gray-600 font-medium truncate max-w-xs">
                   План продаж: Вся матрица Wildberries на 3 месяца (до 24.06.26)
                 </span>
-                <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">Активен</span>
-                {/* Фича 2 — watching badge */}
-                <WatchingBadge />
+                <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-0.5 rounded-full">Планом управляет Агент</span>
               </div>
               <div className="flex items-center gap-3">
                 {/* Auto-publish toggle */}
@@ -1088,9 +1761,15 @@ function DashboardScreen({ initialTab, onReport, onAllPlans }) {
   )
 }
 
+const CHART_ACTIONS = [
+  { key: 'actReviews',  label: 'Отзывы',    color: '#ddd6fe', total: 22 },
+  { key: 'actClusters', label: 'Кластеры',  color: '#c4b5fd', total: 8  },
+  { key: 'actPrice',    label: 'Изм. цены', color: '#7c3aed', total: 14 },
+]
+
 function PlanTab({ expandDesc, setExpandDesc, onReport }) {
   const [editingName, setEditingName] = useState(false)
-  const [planName, setPlanName] = useState('Вся матрица Wildberries на 3 месяца (до 24.06.26)')
+  const [planName, setPlanName] = useState('Вся матрица Wildberries — 60 дней (06.05–04.07)')
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50 p-6">
@@ -1120,29 +1799,49 @@ function PlanTab({ expandDesc, setExpandDesc, onReport }) {
             </div>
           </div>
           <p className={`text-sm text-gray-600 leading-relaxed ${!expandDesc ? 'line-clamp-2' : ''}`}>
-            Стратегия достижения плана строится не вокруг одного рычага, а вокруг последовательной системы автоматизации. В текущих данных видно, что бизнес уже имеет хороший оборот, но часть потенциала теряется на трёх уровнях. Первый — неэффективное привлечение: при CTR 4,75% и рекламной доле расходов 32,1% часть SKU получает дорогой трафик, который можно перераспределить на более конверсионные позиции.
+            Стартовая точка — маржинальность 0,7% при ДРР 18,9%. Цель плана: довести маржу до 18,5% за 60 дней за счёт трёх рычагов. Первый — управление ценой: артикул 14433381 показывает устойчивый спрос, на нём можно поэтапно поднять цену на 2–3% без потери заказов. Второй — фильтрация акций: участвуем только там, где маржа после скидки остаётся положительной. Третий — оптимизация рекламы: отключаем неэффективные кампании, снижая ДРР с 18,9% до целевых 12–13%.
           </p>
           <button onClick={() => setExpandDesc(!expandDesc)} className="mt-1 text-xs text-purple-600 flex items-center gap-1">
             {expandDesc ? <><ChevronUp size={12} />Свернуть</> : <><ChevronDown size={12} />Развернуть</>}
           </button>
+          <p className="mt-2 text-xs text-gray-400">Обновлён 25.05 · Следующее обновление через неделю</p>
 
           {/* Metrics */}
           <div className="mt-5 grid grid-cols-4 gap-4 border-t border-gray-100 pt-5">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Цель плана</p>
-              <p className="text-lg font-bold text-gray-900">1 128 567 343 ₽</p>
+              <p className="text-xs text-gray-500 mb-1">Цель по марже</p>
+              <p className="text-lg font-bold text-gray-900">42 330 ₽</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 mb-1">Текущие продажи</p>
-              <p className="text-lg font-bold text-gray-900">567 343 ₽</p>
+              <p className="text-xs text-gray-500 mb-1">Текущая маржа</p>
+              <p className="text-lg font-bold text-gray-900">14 100 ₽</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">До выполнения плана</p>
-              <p className="text-lg font-bold text-gray-900">754 867 ₽</p>
+              <p className="text-lg font-bold text-gray-900">28 230 ₽</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Процент выполнения</p>
-              <p className="text-lg font-bold text-purple-600">27%</p>
+              <p className="text-lg font-bold text-purple-600">33%</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+              <span>0 ₽</span>
+              <span className="text-purple-500 font-medium">33% выполнено</span>
+              <span>42 330 ₽</span>
+            </div>
+            <div className="relative h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 h-full bg-purple-500 rounded-full transition-all"
+                style={{ width: '33%' }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs mt-1.5">
+              <span className="text-gray-500">Накоплено: <span className="font-medium text-gray-700">14 100 ₽</span></span>
+              <span className="text-gray-400">Осталось: <span className="font-medium text-gray-600">28 230 ₽</span></span>
             </div>
           </div>
 
@@ -1150,48 +1849,122 @@ function PlanTab({ expandDesc, setExpandDesc, onReport }) {
           <div className="mt-5 grid grid-cols-2 gap-5 border-t border-gray-100 pt-5">
             <div>
               <p className="text-xs text-gray-500 mb-1">До завершения плана</p>
-              <p className="text-2xl font-bold text-gray-900 mb-2">45 дней</p>
+              <p className="text-2xl font-bold text-gray-900 mb-2">31 день</p>
               <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="absolute left-0 top-0 h-full bg-purple-400 rounded-full" style={{ width: '50%' }} />
-                <div className="absolute h-4 w-0.5 bg-purple-600 top-1/2 -translate-y-1/2" style={{ left: '50%' }} />
+                <div className="absolute left-0 top-0 h-full bg-purple-400 rounded-full" style={{ width: '48%' }} />
+                <div className="absolute h-4 w-0.5 bg-purple-600 top-1/2 -translate-y-1/2" style={{ left: '48%' }} />
               </div>
               <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>0</span><span>30</span><span>60</span><span>90</span>
+                <span>0</span><span>30</span><span>60</span>
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-500 mb-1">Отклонение от плана</p>
-              <p className="text-2xl font-bold text-red-500 mb-2">-11%</p>
-              <div className="flex gap-1 h-2">
-                <div className="flex-1 bg-red-400 rounded-sm" style={{ maxWidth: '30%' }} title="-4%" />
-                <div className="flex-1 bg-green-400 rounded-sm" style={{ maxWidth: '70%' }} title="+27%" />
+              <p className="text-xs text-gray-500 mb-1">Маржинальность сейчас</p>
+              <p className="text-2xl font-bold text-green-600 mb-2">13,1%</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div className="h-full bg-green-400 rounded-full" style={{ width: `${(13.1 / 18.5) * 100}%` }} />
+                </div>
+                <span className="text-xs text-gray-400">цель 18,5%</span>
               </div>
-              <div className="flex justify-between text-xs mt-1">
-                <span className="text-red-500">-4%</span>
-                <span className="text-green-500">+27%</span>
-              </div>
+              <p className="text-xs text-green-600 mt-1.5">+0,3 п.п. к плану нед. 4</p>
             </div>
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm font-semibold text-gray-900 mb-4">Продажи ₽</p>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={CHART_DATA} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="t" tick={{ fontSize: 11 }} tickFormatter={v => v} />
-              <YAxis tick={{ fontSize: 11 }} unit=" М" domain={[295, 400]} />
-              <Tooltip
-                formatter={(v, name) => [v ? `${v} млн ₽` : '—', name]}
-                labelFormatter={v => `Точка ${v}`}
-              />
-              <Legend iconType="line" wrapperStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="base" name="Динамика до плана" stroke="#d1d5db" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-              <Line type="monotone" dataKey="plan" name="План" stroke="#a78bfa" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-              <Line type="monotone" dataKey="fact" name="Факт" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3, fill: '#7c3aed' }} connectNulls={false} />
-            </LineChart>
-          </ResponsiveContainer>
+        {/* Chart + agent actions strip */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 pt-5 pb-0">
+            <div className="flex items-center gap-4 mb-4">
+              <p className="text-sm font-semibold text-gray-900 mr-2">Маржинальность по неделям, %</p>
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 border-t-2 border-dashed border-gray-300" />
+                <span className="text-xs text-gray-500">План</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 border-t-2 border-purple-600" />
+                <span className="text-xs text-gray-500">Факт</span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={210}>
+              <LineChart data={MARGIN_CHART_DATA} margin={{ top: 4, right: 16, bottom: 4, left: -8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                <XAxis dataKey="week" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 20]} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v, name) => [v !== null ? `${v}%` : '—', name]} labelFormatter={v => v} />
+                <Line type="linear" dataKey="план" name="План" stroke="#d1d5db" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
+                <Line type="linear" dataKey="факт" name="Факт" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 4, fill: '#7c3aed', strokeWidth: 0 }} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Agent actions summary strip */}
+          <div className="border-t border-gray-100 px-6 py-3 bg-gray-50 flex items-center gap-5 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-500">Всего действий агента:</span>
+                <span className="text-sm font-bold text-gray-900">44</span>
+              </div>
+              <div className="w-px h-4 bg-gray-200" />
+              {CHART_ACTIONS.map(a => (
+                <div key={a.key} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: a.color }} />
+                  <span className="text-xs text-gray-600">{a.label}: <span className="font-medium text-gray-800">{a.total}</span></span>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        {/* Weekly breakdown table */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <p className="text-sm font-semibold text-gray-900">Недельный план / факт</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-50 text-[#808080]">
+                  <th className="px-4 py-2.5 text-left font-semibold">Неделя</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Даты</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Маржа план</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Маржа факт</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">% план</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">% факт</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Отклонение</th>
+                </tr>
+              </thead>
+              <tbody>
+                {WEEKLY_PLAN.map((row, i) => {
+                  const hasFact = row.factMargin !== null
+                  const delta = hasFact ? row.factMarginP - row.marginP : null
+                  const isCurrent = i === 3 // текущая неделя — Нед 4
+                  return (
+                    <tr key={i} className={`border-t border-[#f4f4f4] ${isCurrent ? 'bg-purple-50 font-semibold' : 'hover:bg-gray-50'}`}>
+                      <td className="px-4 py-2.5 text-[#2b2b2b]">{row.week}</td>
+                      <td className="px-4 py-2.5 text-[#808080]">{row.dates}</td>
+                      <td className="px-4 py-2.5 text-right text-[#2b2b2b]">{row.margin.toLocaleString('ru')} ₽</td>
+                      <td className="px-4 py-2.5 text-right">
+                        {hasFact
+                          ? <span className="text-[#2b2b2b]">{row.factMargin.toLocaleString('ru')} ₽</span>
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-[#808080]">{row.marginP}%</td>
+                      <td className="px-4 py-2.5 text-right">
+                        {hasFact
+                          ? <span className="text-[#2b2b2b]">{row.factMarginP}%</span>
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {delta !== null
+                          ? <span className={delta >= 0 ? 'text-green-600' : 'text-red-500'}>
+                              {delta >= 0 ? '+' : ''}{delta.toFixed(1)} п.п.
+                            </span>
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1452,10 +2225,10 @@ function EventsTab({ expanded, setExpanded, onModal }) {
 
 // ─── REPORT ──────────────────────────────────────────────────────────────────
 
-function ReportScreen({ onBack }) {
+function ReportScreen({ onBack, onNavigate }) {
   return (
     <div className="flex-1 flex overflow-hidden">
-      <Sidebar highlightPlans />
+      <Sidebar highlightPlans onNavigate={onNavigate} />
       <div className="flex-1 overflow-y-auto bg-white">
         <div className="max-w-3xl mx-auto px-8 py-8 space-y-6">
           {/* Hero */}
@@ -1618,7 +2391,8 @@ function DemoPanel({ onJump }) {
     { label: 'Чат: начало', target: 'chat-start' },
     { label: 'Чат: конец', target: 'chat-full' },
     { label: 'Чат + drawer', target: 'chat-drawer' },
-    { label: 'Все планы', target: 'plans' },
+    { label: 'Планы: пусто', target: 'plans-empty' },
+    { label: 'Планы: список', target: 'plans' },
     { label: 'Дашборд: план', target: 'dash-plan' },
     { label: 'Дашборд: сценарии', target: 'dash-scenarios' },
     { label: 'Дашборд: события', target: 'dash-events' },
@@ -1649,6 +2423,7 @@ export default function App() {
   const [chatTask, setChatTask] = useState('')
   const [dashTab, setDashTab] = useState('plan')
   const [dashKey, setDashKey] = useState(0)
+  const [planExists, setPlanExists] = useState(false)
 
   const jumpTo = (target) => {
     if (target === 'start') {
@@ -1667,16 +2442,23 @@ export default function App() {
       setChatKey(k => k + 1)
       setScreen('chat')
     } else if (target === 'plans') {
+      setPlanExists(true)
+      setScreen('plans')
+    } else if (target === 'plans-empty') {
+      setPlanExists(false)
       setScreen('plans')
     } else if (target === 'dash-plan') {
+      setPlanExists(true)
       setDashTab('plan')
       setDashKey(k => k + 1)
       setScreen('dashboard')
     } else if (target === 'dash-scenarios') {
+      setPlanExists(true)
       setDashTab('scenarios')
       setDashKey(k => k + 1)
       setScreen('dashboard')
     } else if (target === 'dash-events') {
+      setPlanExists(true)
       setDashTab('events')
       setDashKey(k => k + 1)
       setScreen('dashboard')
@@ -1690,19 +2472,24 @@ export default function App() {
       <style>{GLOBAL_STYLES}</style>
       <div className="flex-1 flex overflow-hidden">
         {screen === 'start' && (
-          <StartScreen onStart={(task) => {
-            setChatTask(task)
-            setChatPreset('start')
-            setChatKey(k => k + 1)
-            setScreen('chat')
-          }} />
+          <StartScreen
+            onNavigate={jumpTo}
+            onStart={(task) => {
+              setChatTask(task)
+              setChatPreset('start')
+              setChatKey(k => k + 1)
+              setScreen('chat')
+            }}
+          />
         )}
         {screen === 'chat' && (
           <ChatScreen
             key={chatKey}
             initialTask={chatTask}
             preset={chatPreset}
+            onNavigate={jumpTo}
             onPlanReady={() => {
+              setPlanExists(true)
               setDashTab('plan')
               setDashKey(k => k + 1)
               setScreen('dashboard')
@@ -1711,6 +2498,8 @@ export default function App() {
         )}
         {screen === 'plans' && (
           <PlansScreen
+            planExists={planExists}
+            onNavigate={jumpTo}
             onOpenPlan={() => {
               setDashTab('plan')
               setDashKey(k => k + 1)
@@ -1727,12 +2516,13 @@ export default function App() {
           <DashboardScreen
             key={dashKey}
             initialTab={dashTab}
+            onNavigate={jumpTo}
             onReport={() => setScreen('report')}
             onAllPlans={() => setScreen('plans')}
           />
         )}
         {screen === 'report' && (
-          <ReportScreen onBack={() => setScreen('dashboard')} />
+          <ReportScreen onNavigate={jumpTo} onBack={() => setScreen('dashboard')} />
         )}
       </div>
       <DemoPanel onJump={jumpTo} />
